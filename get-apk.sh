@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC3010
 
 # Exit the script if any commands error (return non-zero status code).
 # set -e
@@ -9,7 +10,7 @@
 ##
 # Global variables and constants.
 ##
-readonly apk_id=$1
+readonly apk_id="$1"
 
 # Useful docs: https://www.youtube.com/watch?v=PqgDvAAaTgA
 readonly INSTALL_BUTTON_X_COORD="550" # Determined manually for Pixel 3a
@@ -29,7 +30,7 @@ fi
 # Return TRUE if the apk is installed on the phone; FALSE otherwise.
 ##
 is_apk_installed() {
-    if [[ $(adb shell pm list packages | grep ${apk_id}) ]]
+    if [[ $(adb shell pm list packages | grep "${apk_id}") ]]
     then
         echo "YES"
     else
@@ -82,7 +83,8 @@ download_apk() {
     printf "Downloading apk from the phone..."
 
     # Check for multi-part APKs
-    readonly remote_apk_path_line_count=$(adb shell pm path ${apk_id} | wc -l)
+    readonly remote_apk_path_line_count
+    remote_apk_path_line_count=$(adb shell pm path "${apk_id}" | wc -l)
     # printf "\n remote_apk_path_line_count = ${remote_apk_path_line_count}"
 
     if [[ ! ${remote_apk_path_line_count} -eq 1 ]]
@@ -100,21 +102,24 @@ Downloading ONLY the base.apk
 
     # Get all paths, keep only the first, and then split on ":" and return the
     # left hand side
-    readonly remote_apk_path=$(adb shell pm path ${apk_id} | head -n 1 | awk -F':' '{print $2}')
+    readonly remote_apk_path
+    remote_apk_path=$(adb shell pm path "${apk_id}" | head -n 1 | awk -F':' '{print $2}')
     # echo "remote_apk_path = ${remote_apk_path}"
 
     # Get APK package information, grep the versionName, split on '=', and
     # return the left hand value (the apk version).
-    readonly apk_version=$(adb shell dumpsys package ${apk_id} | grep versionName | awk -F'=' '{print $2}')
-    readonly apk_versioned_name_base="${apk_id}@v${apk_version}"
+    readonly apk_version
+    apk_version=$(adb shell dumpsys package "${apk_id}" | grep versionName | awk -F'=' '{print $2}')
+    readonly apk_versioned_name_base
+    apk_versioned_name_base="${apk_id}@v${apk_version}"
 
     # Make the output directory in which to save the APK and checksum
     readonly output_dir="${apk_versioned_name_base}/apk"
-    mkdir -p ${output_dir}
+    mkdir -p "${output_dir}"
     readonly local_apk_path="${output_dir}/${apk_versioned_name_base}-playstore.apk"
 
     # Copy the APK from the phone to the laptop
-    adb pull ${remote_apk_path} ${local_apk_path} > /dev/null
+    adb pull "${remote_apk_path}" "${local_apk_path}" > /dev/null
     printf "done.\n"
     echo "APK downloaded to: ${local_apk_path}"
 
@@ -131,7 +136,7 @@ Downloading ONLY the base.apk
     fi
 
     # Record the sha256 checksum of the downloaded APK
-    shasum --algorithm 256 --binary ${local_apk_path} > "${local_apk_path}.sha256"
+    shasum --algorithm 256 --binary "${local_apk_path}" > "${local_apk_path}.sha256"
 }
 
 main() {
