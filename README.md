@@ -1,5 +1,7 @@
 `getapk` is a small CLI program that allows you to download raw APK files from the Google Play store by using an actual Android device in debugging mode.
 
+The Android device **does not** need to be rooted.
+
 # Install
 
 Clone this repo (or copy `get-apk.sh`) and add this to your `~/.bash_profile`:
