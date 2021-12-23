@@ -83,8 +83,8 @@ download_apk() {
     printf "Downloading apk from the phone..."
 
     # Check for multi-part APKs
-    readonly remote_apk_path_line_count
     remote_apk_path_line_count=$(adb shell pm path "${apk_id}" | wc -l)
+    readonly remote_apk_path_line_count
     # printf "\n remote_apk_path_line_count = ${remote_apk_path_line_count}"
 
     if [[ ! ${remote_apk_path_line_count} -eq 1 ]]
@@ -102,16 +102,15 @@ Downloading ONLY the base.apk
 
     # Get all paths, keep only the first, and then split on ":" and return the
     # left hand side
-    readonly remote_apk_path
     remote_apk_path=$(adb shell pm path "${apk_id}" | head -n 1 | awk -F':' '{print $2}')
+    readonly remote_apk_path
     # echo "remote_apk_path = ${remote_apk_path}"
 
     # Get APK package information, grep the versionName, split on '=', and
     # return the left hand value (the apk version).
-    readonly apk_version
     apk_version=$(adb shell dumpsys package "${apk_id}" | grep versionName | awk -F'=' '{print $2}')
-    readonly apk_versioned_name_base
-    apk_versioned_name_base="${apk_id}@v${apk_version}"
+    readonly apk_version
+    readonly apk_versioned_name_base="${apk_id}@v${apk_version}"
 
     # Make the output directory in which to save the APK and checksum
     readonly output_dir="${apk_versioned_name_base}/apk"
