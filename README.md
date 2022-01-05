@@ -7,12 +7,12 @@ The version of the APK is automatically checked and included in the generated
 APK filename.
 
 # Install
-Clone this repo (or copy `get-apk.sh`) and add this to your `~/.bash_profile`:
+Clone this repo (or copy `get-apk.sh`) and add this to your `~/.bash_profile` or `~/.zshrc`:
 
 ```
 function getapk() {
-    apk_id=$1
-    /path/to/get-apk.sh ${apk_id}
+    all_args=( "$@" )
+    /path/to/get-apk.sh "${all_args[@]}"
 }
 ```
 

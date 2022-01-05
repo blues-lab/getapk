@@ -19,15 +19,29 @@ readonly INSTALL_BUTTON_Y_COORD="800" # Determined manually for Pixel 3a
 ##
 # Verify script arguments
 ##
-readonly num_args=$#
-if [ ! ${num_args} -eq 1 ]
+readonly num_args="$#"
+if [ ! "${num_args}" -eq 1 ]
 then
-    echo "Wrong number of arguments. Expected 1, but got ${num_args}"
+    echo "Wrong number of arguments!"
+    echo "Expected a single argument (the apk id), but got ${num_args} arguments."
+    echo "Example usage: \$> getapk com.authy.authy"
     exit 1
 fi
 
 ##
-# Return TRUE if the apk is installed on the phone; FALSE otherwise.
+# Verify the number of Android devices available to adb
+##
+adb_devices_line_count=$(adb devices -l | wc -l)
+device_count=$(( adb_devices_line_count - 2 ))
+if [ ! "${adb_devices_line_count}" -eq 3 ]
+then
+    echo "Wrong number of Android devices!"
+    echo "Expected a single Android device in debugging mode, but adb found ${device_count} devices."
+    exit 1
+fi
+
+##
+# Return "YES" if the apk is installed on the phone; "NO" otherwise.
 ##
 is_apk_installed() {
     if [[ $(adb shell pm list packages | grep "${apk_id}") ]]
@@ -74,12 +88,12 @@ install_apk() {
 
 ##
 # Copy the APK from the phone to the laptop.
+#
+# Useful docs: https://stackoverflow.com/questions/4032960/how-do-i-get-an-apk-file-from-an-android-device
 ##
 download_apk() {
     is_multipart_apk="NO"
 
-    # Format of the response from `pm path` is `package:some/remote/path/to/apk`
-    # Useful docs: https://stackoverflow.com/questions/4032960/how-do-i-get-an-apk-file-from-an-android-device
     printf "Downloading apk from the phone..."
 
     # Check for multi-part APKs
@@ -95,9 +109,9 @@ download_apk() {
         # getting printed in the output.
         printf "\n===== WARNING =====
 Multi-part apk detected!\n
-$(adb shell pm path ${apk_id}) \n
+%s \n
 Downloading ONLY the base.apk
-===== WARNING =====\n"
+===== WARNING =====\n" "$(adb shell pm path "${apk_id}")"
     fi
 
     # Get all paths, keep only the first, and then split on ":" and return the
@@ -127,11 +141,11 @@ Downloading ONLY the base.apk
     then
         # Sadly, this horrible formatting is required to prevent whitespace from
         # getting printed in the output.
-        printf "\n===== WARNING =====
+                printf "\n===== WARNING =====
 Multi-part apk detected!\n
-$(adb shell pm path ${apk_id}) \n
+%s \n
 Downloading ONLY the base.apk
-===== WARNING =====\n" > "${output_dir}/multipart.getapk.txt"
+===== WARNING =====\n" "$(adb shell pm path "${apk_id}")" > "${output_dir}/multipart.getapk.txt"
     fi
 
     # Record the sha256 checksum of the downloaded APK
@@ -145,7 +159,7 @@ main() {
     then
         echo "APK is already installed on the phone."
     else
-        echo "Installing APK..."
+        echo "Installing APK on the phone..."
         install_apk
     fi
 
