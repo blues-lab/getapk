@@ -2,7 +2,7 @@
 # shellcheck disable=SC3010
 
 # Exit the script if any commands error (return non-zero status code).
-# set -e
+set -e
 
 # Print all commands before running them
 # set -x
@@ -78,9 +78,20 @@ install_apk() {
     printf "done.\n"
 
     ##
+    # Locate the 'Install' button...
+    #
+    # Useful docs:
+    # https://stackoverflow.com/questions/18924968/using-adb-to-access-a-particular-ui-control-on-the-screen
+    # https://stuff.mit.edu/afs/sipb/project/android/docs/tools/help/uiautomator/index.html#options
+    ##
+    # adb shell uiautomator dump
+    # adb pull /storage/sdcard0/window_dump.xml     
+
+    ##
     # Tap the 'Install' button
     ##
     printf "Tapping the Install button on the phone..."
+    
     adb shell input tap ${INSTALL_BUTTON_X_COORD} ${INSTALL_BUTTON_Y_COORD}
     printf "done.\n"
 
