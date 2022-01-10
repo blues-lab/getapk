@@ -7,7 +7,8 @@ The version of the APK is automatically checked and included in the generated
 APK filename.
 
 # Install
-Clone this repo (or copy `get-apk.sh`) and add this to your `~/.bash_profile` or `~/.zshrc`:
+Clone this repo (or copy `get-apk.sh`) and add a function to your shell
+(e.g. `~/.bash_profile` or `~/.zshrc`):
 
 ```
 function getapk() {
@@ -40,43 +41,42 @@ readonly INSTALL_BUTTON_Y_COORD="800" # Determined manually for Pixel 3a
 If the APK is not yet installed on the phone:
 ```
 $> getapk com.authy.authy
-Getting apk from the Play Store with id: com.authy.authy...
-Installing APK...
+Getting APK from the Play Store with id: com.authy.authy...
+Installing APK on the phone...
 Opening APK's Play Store entry on the phone...done.
 Tapping the Install button on the phone...done.
-Waiting for APK to install on the phone........done.
-Downloading apk from the phone...done.
-APK downloaded to: com.authy.authy@v24.8.1/apk/com.authy.authy@v24.8.1-playstore.apk
+Waiting for APK to install on the phone..............done.
+Downloading APK file(s) from the phone...
+APK (1/1) downloaded to:
+com.authy.authy@v24.8.1/apk/com.authy.authy@v24.8.1-playstore.apk
 ```
 
 If the APK is already installed on the phone:
 ```
 $> getapk com.authy.authy
-Getting apk from the Play Store with id: com.authy.authy...
+Getting APK from the Play Store with id: com.authy.authy...
 APK is already installed on the phone.
-Downloading apk from the phone...done.
-APK downloaded to: com.authy.authy@v24.8.1/apk/com.authy.authy@v24.8.1-playstore.apk
+Downloading APK file(s) from the phone...
+APK (1/1) downloaded to:
+com.authy.authy@v24.8.1/apk/com.authy.authy@v24.8.1-playstore.apk
 ```
 
 If the APK is multi-part:
 ```
 $> getapk com.twofasapp
-Getting apk from the Play Store with id: com.twofasapp...
+Getting APK from the Play Store with id: com.twofasapp...
 APK is already installed on the phone.
-Downloading apk from the phone...
-===== WARNING =====
-Multi-part apk detected!
-
-package:/data/app/com.twofasapp-c_EDsgL6BSRr1v3x8bFZNg==/base.apk
-package:/data/app/com.twofasapp-c_EDsgL6BSRr1v3x8bFZNg==/split_config.arm64_v8a.apk
-package:/data/app/com.twofasapp-c_EDsgL6BSRr1v3x8bFZNg==/split_config.en.apk
-package:/data/app/com.twofasapp-c_EDsgL6BSRr1v3x8bFZNg==/split_config.es.apk
-package:/data/app/com.twofasapp-c_EDsgL6BSRr1v3x8bFZNg==/split_config.xxhdpi.apk
-
-Downloading ONLY the base.apk
-===== WARNING =====
-done.
-APK downloaded to: com.twofasapp@v3.8.0/apk/com.twofasapp@v3.8.0-playstore.apk
+Downloading APK file(s) from the phone...
+APK (1/5) downloaded to:
+com.twofasapp@v3.8.0/apk/com.twofasapp@v3.8.0-playstore.apk
+APK (2/5) downloaded to:
+com.twofasapp@v3.8.0/apk/com.twofasapp-arm64_v8a@3.8.0-playstore.apk
+APK (3/5) downloaded to:
+com.twofasapp@v3.8.0/apk/com.twofasapp-en@3.8.0-playstore.apk
+APK (4/5) downloaded to:
+com.twofasapp@v3.8.0/apk/com.twofasapp-es@3.8.0-playstore.apk
+APK (5/5) downloaded to:
+com.twofasapp@v3.8.0/apk/com.twofasapp-xxhdpi@3.8.0-playstore.apk
 ```
 
 # Known issues

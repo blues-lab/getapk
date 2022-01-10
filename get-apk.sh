@@ -10,6 +10,8 @@
 ##
 # Global variables and constants.
 ##
+readonly is_debugging_enabled="NO"
+
 readonly apk_id="$1"
 
 # Useful docs: https://www.youtube.com/watch?v=PqgDvAAaTgA
@@ -23,7 +25,7 @@ readonly num_args="$#"
 if [ ! "${num_args}" -eq 1 ]
 then
     echo "Wrong number of arguments!"
-    echo "Expected a single argument (the apk id), but got ${num_args} arguments."
+    echo "Expected a single argument (the APK id), but got ${num_args} arguments."
     echo "Example usage: \$> getapk com.authy.authy"
     exit 1
 fi
@@ -41,7 +43,16 @@ then
 fi
 
 ##
-# Return "YES" if the apk is installed on the phone; "NO" otherwise.
+# Debugging echo
+##
+debug_println() {
+    if [[ "${is_debugging_enabled}" = "YES" ]]; then
+        printf "[DEBUG] %s\n" "$1"
+    fi
+}
+
+##
+# Return "YES" if the APK is installed on the phone; "NO" otherwise.
 ##
 is_apk_installed() {
     if [[ $(adb shell pm list packages | grep "${apk_id}") ]]
@@ -92,68 +103,71 @@ install_apk() {
 # Useful docs: https://stackoverflow.com/questions/4032960/how-do-i-get-an-apk-file-from-an-android-device
 ##
 download_apk() {
-    is_multipart_apk="NO"
+    echo "Downloading APK file(s) from the phone..."
 
-    printf "Downloading apk from the phone..."
+    remote_apk_paths=$(adb shell pm path "${apk_id}")
+    readonly remote_apk_paths
+    debug_println "remote_apk_paths = ${remote_apk_paths}"
 
-    # Check for multi-part APKs
-    remote_apk_path_line_count=$(adb shell pm path "${apk_id}" | wc -l)
-    readonly remote_apk_path_line_count
-    # printf "\n remote_apk_path_line_count = ${remote_apk_path_line_count}"
+    # The xargs is there to trim the whitespace from the line count
+    path_count=$(echo "${remote_apk_paths}" | wc -l | xargs)
+    readonly path_count
+    debug_println "path_count = ${path_count}"
 
-    if [[ ! ${remote_apk_path_line_count} -eq 1 ]]
-    then
-        is_multipart_apk="YES"
-
-        # Sadly, this horrible formatting is required to prevent whitespace from
-        # getting printed in the output.
-        printf "\n===== WARNING =====
-Multi-part apk detected!\n
-%s \n
-Downloading ONLY the base.apk
-===== WARNING =====\n" "$(adb shell pm path "${apk_id}")"
+    if [[ ${path_count} -eq 0 ]]; then
+        echo "APK with id ${apk_id} is not installed on the phone!"
     fi
 
-    # Get all paths, keep only the first, and then split on ":" and return the
-    # left hand side
-    remote_apk_path=$(adb shell pm path "${apk_id}" | head -n 1 | awk -F':' '{print $2}')
-    readonly remote_apk_path
-    # echo "remote_apk_path = ${remote_apk_path}"
-
     # Get APK package information, grep the versionName, split on '=', and
-    # return the left hand value (the apk version).
-    apk_version=$(adb shell dumpsys package "${apk_id}" | grep versionName | awk -F'=' '{print $2}')
+    # return the left hand value (the APK version).
+    apk_version=$(
+        adb shell dumpsys package "${apk_id}" | \
+        grep versionName | \
+        awk -F '=' '{print $2}'
+    )
     readonly apk_version
     readonly apk_versioned_name_base="${apk_id}@v${apk_version}"
 
-    # Make the output directory in which to save the APK and checksum
+    # Make the output directory in which to save the APK(s) and checksum(s)
     readonly output_dir="${apk_versioned_name_base}/apk"
     mkdir -p "${output_dir}"
-    readonly local_apk_path="${output_dir}/${apk_versioned_name_base}-playstore.apk"
 
-    # Copy the APK from the phone to the laptop
-    adb pull "${remote_apk_path}" "${local_apk_path}" > /dev/null
-    printf "done.\n"
-    echo "APK downloaded to: ${local_apk_path}"
+    path_number=1
+    for line in ${remote_apk_paths}; do
+        debug_println "Line = ${line}"
 
-    # If multipart, record the warning message in a text file
-    if [[ ${is_multipart_apk} = "YES" ]]
-    then
-        # Sadly, this horrible formatting is required to prevent whitespace from
-        # getting printed in the output.
-                printf "\n===== WARNING =====
-Multi-part apk detected!\n
-%s \n
-Downloading ONLY the base.apk
-===== WARNING =====\n" "$(adb shell pm path "${apk_id}")" > "${output_dir}/multipart.getapk.txt"
-    fi
+        remote_apk_path=$(echo "${line}" | awk -F ':' '{print $2}')
+        debug_println "Remote APK path = ${remote_apk_path}"
 
-    # Record the sha256 checksum of the downloaded APK
-    shasum --algorithm 256 --binary "${local_apk_path}" > "${local_apk_path}.sha256"
+        # Return everything from remote_apk_path after the final slash "/"
+        remote_apk_filename="${remote_apk_path##*/}"
+        debug_println "Remote APK filename = ${remote_apk_filename}"
+
+        if [[ "${remote_apk_filename}" = "base.apk" ]]; then
+            local_apk_path="${output_dir}/${apk_versioned_name_base}-playstore.apk"
+        else
+            # Split into an array using period delimiter and return the second index.
+            # Filenames for multipart APKs look like: "split_config.en.apk"
+            multipart_apk_filename_part=$(echo "${remote_apk_filename}" | awk -F '.' '{print $2}')
+            debug_println "Multipart APK filename part = ${multipart_apk_filename_part}"
+
+            local_apk_path="${output_dir}/${apk_id}-${multipart_apk_filename_part}@${apk_version}-playstore.apk"
+        fi
+        debug_println "Local APK path = ${local_apk_path}"
+
+        # Copy the APK from the phone to the laptop
+        adb pull "${remote_apk_path}" "${local_apk_path}" > /dev/null
+        printf "APK (%s/%s) downloaded to:\n%s\n" "${path_number}" "${path_count}" "${local_apk_path}"
+
+        # Record the sha256 checksum of the downloaded APK
+        shasum --algorithm 256 --binary "${local_apk_path}" > "${local_apk_path}.sha256"
+
+        path_number=$(( path_number + 1))
+    done
 }
 
 main() {
-    echo "Getting apk from the Play Store with id: $apk_id..."
+    echo "Getting APK from the Play Store with id: $apk_id..."
 
     if [[ $(is_apk_installed) = "YES" ]]
     then
