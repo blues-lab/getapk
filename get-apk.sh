@@ -33,7 +33,7 @@ fi
 ##
 adb_devices_line_count=$(adb devices -l | wc -l)
 device_count=$(( adb_devices_line_count - 2 ))
-if [ ! "${adb_devices_line_count}" -eq 3 ]
+if [ ! "${device_count}" -eq 1 ]
 then
     echo "Wrong number of Android devices!"
     echo "Expected a single Android device in debugging mode, but adb found ${device_count} devices."
